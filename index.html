@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第3章数据可视化交互平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@9.4.4/lib/browser/math.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            transition: background 0.5s ease;
+        }
+        
+        .theme-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .theme-selector select {
+            border: none;
+            background: transparent;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .theme-selector select:focus {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            margin: 0 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .tab.active {
+            background: rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .content {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="range"], input[type="number"], select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="range"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .tab {
+                margin: 5px 0;
+                width: 100%;
+                max-width: 200px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+        
+        /* 主题样式 */
+        body.theme-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        body.theme-blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        body.theme-green {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        body.theme-orange {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        body.theme-dark {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+        
+        body.theme-purple .tab.active,
+        body.theme-purple button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        body.theme-blue .tab.active,
+        body.theme-blue button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        body.theme-green .tab.active,
+        body.theme-green button {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        body.theme-orange .tab.active,
+        body.theme-orange button {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        body.theme-dark .tab.active,
+        body.theme-dark button {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+        
+        body.theme-purple .info-panel {
+            border-left: 4px solid #667eea;
+        }
+        
+        body.theme-blue .info-panel {
+            border-left: 4px solid #4facfe;
+        }
+        
+        body.theme-green .info-panel {
+            border-left: 4px solid #43e97b;
+        }
+        
+        body.theme-orange .info-panel {
+            border-left: 4px solid #fa709a;
+        }
+        
+        body.theme-dark .info-panel {
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body class="theme-purple">
+    <div class="theme-selector">
+        <select id="themeSelect" onchange="changeTheme(this.value)">
+            <option value="purple">💜 紫色主题</option>
+            <option value="blue">💙 蓝色主题</option>
+            <option value="green">💚 绿色主题</option>
+            <option value="orange">🧡 橙色主题</option>
+            <option value="dark">🌙 深色主题</option>
+        </select>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>📊 第3章数据可视化交互平台</h1>
+            <p>基于第3章数据可视化内容的交互式展示</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="tab active" onclick="showTab('trigonometry')">三角函数</button>
+            <button class="tab" onclick="showTab('movie')">电影票房</button>
+            <button class="tab" onclick="showTab('alipay')">支付宝账单</button>
+            <button class="tab" onclick="showTab('car')">速度与制动</button>
+            <button class="tab" onclick="showTab('english')">英语成绩</button>
+        </div>
+        
+        <!-- 三角函数图表 -->
+        <div id="trigonometry" class="content active">
+            <h2>📈 正弦和余弦函数可视化</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="amplitude">振幅:</label>
+                    <input type="range" id="amplitude" min="0.1" max="2" step="0.1" value="1">
+                    <span id="amplitudeValue">1</span>
+                </div>
+                <div class="control-group">
+                    <label for="frequency">频率:</label>
+                    <input type="range" id="frequency" min="0.5" max="3" step="0.1" value="1">
+                    <span id="frequencyValue">1</span>
+                </div>
+                <div class="control-group">
+                    <label for="phase">相位:</label>
+                    <input type="range" id="phase" min="-3.14" max="3.14" step="0.1" value="0">
+                    <span id="phaseValue">0</span>
+                </div>
+                <button onclick="updateTrigChart()">更新图表</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="trigChart"></canvas>
+            </div>
+            <div class="info-panel">
+                <h3>📝 图表说明</h3>
+                <p>此图表展示了正弦函数(sin)和余弦函数(cos)在指定区间内的变化趋势。您可以通过调整振幅、频率和相位参数来观察函数图形的变化。</p>
+            </div>
+        </div>
+        
+        <!-- 电影票房图表 -->
+        <div id="movie" class="content">
+            <h2>🎬 2019年内地电影票房排行榜</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="sortOrder">排序方式:</label>
+                    <select id="sortOrder" onchange="updateMovieChart()">
+                        <option value="desc">票房降序</option>
+                        <option value="asc">票房升序</option>
+                        <option value="name">按名称排序</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="chartType">图表类型:</label>
+                    <select id="chartType" onchange="updateMovieChart()">
+                        <option value="bar">柱状图</option>
+                        <option value="horizontalBar">横向柱状图</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="movieChart"></canvas>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>电影名称</th>
+                        <th>票房(亿元)</th>
+                    </tr>
+                </thead>
+                <tbody id="movieTable">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 支付宝账单图表 -->
+        <div id="alipay" class="content">
+            <h2>💰 支付宝月账单报告</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="totalAmount">总金额(元):</label>
+                    <input type="number" id="totalAmount" value="3000" min="100" max="10000" step="100">
+                </div>
+                <button onclick="updateAlipayChart()">更新账单</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="alipayChart"></canvas>
+            </div>
+            <div class="info-panel">
+                <h3>💡 消费分析</h3>
+                <p>饼图展示了不同消费类别的占比情况。点击图例可以隐藏/显示特定类别，鼠标悬停可查看详细金额信息。</p>
+            </div>
+        </div>
+        
+        <!-- 速度与制动图表 -->
+        <div id="car" class="content">
+            <h2>🚗 汽车速度与制动距离关系</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="roadCondition">路面条件:</label>
+                    <select id="roadCondition" onchange="updateCarChart()">
+                        <option value="dry">干燥路面</option>
+                        <option value="wet">湿滑路面</option>
+                        <option value="ice">冰雪路面</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="carType">车辆类型:</label>
+                    <select id="carType" onchange="updateCarChart()">
+                        <option value="sedan">轿车</option>
+                        <option value="suv">SUV</option>
+                        <option value="truck">卡车</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="carChart"></canvas>
+            </div>
+            <div class="info-panel">
+                <h3>⚠️ 安全提示</h3>
+                <p>制动距离受多种因素影响，包括速度、路面条件、车辆状况等。请保持安全车距，谨慎驾驶。</p>
+            </div>
+        </div>
+        
+        <!-- 英语成绩图表 -->
+        <div id="english" class="content">
+            <h2>📚 全校高二年级各班男女生英语成绩评估</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="showAverage">显示平均线:</label>
+                    <input type="checkbox" id="showAverage" checked onchange="updateEnglishChart()">
+                </div>
+                <div class="control-group">
+                    <label for="genderFilter">性别筛选:</label>
+                    <select id="genderFilter" onchange="updateEnglishChart()">
+                        <option value="all">全部</option>
+                        <option value="male">男生</option>
+                        <option value="female">女生</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="englishChart"></canvas>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>班级</th>
+                        <th>男生平均成绩</th>
+                        <th>女生平均成绩</th>
+                        <th>班级平均</th>
+                    </tr>
+                </thead>
+                <tbody id="englishTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 标签切换功能
+        function showTab(tabName) {
+            // 隐藏所有内容
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // 移除所有标签的active类
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // 显示选中的内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
+            
+            // 初始化图表（如果需要）
+            if (tabName === 'trigonometry') {
+                initTrigChart();
+            } else if (tabName === 'movie') {
+                initMovieChart();
+            } else if (tabName === 'alipay') {
+                initAlipayChart();
+            } else if (tabName === 'car') {
+                initCarChart();
+            } else if (tabName === 'english') {
+                initEnglishChart();
+            }
+        }
+        
+        // 三角函数图表
+        let trigChart;
+        function initTrigChart() {
+            const ctx = document.getElementById('trigChart').getContext('2d');
+            
+            // 更新滑块显示值
+            document.getElementById('amplitude').addEventListener('input', function() {
+                document.getElementById('amplitudeValue').textContent = this.value;
+            });
+            
+            document.getElementById('frequency').addEventListener('input', function() {
+                document.getElementById('frequencyValue').textContent = this.value;
+            });
+            
+            document.getElementById('phase').addEventListener('input', function() {
+                document.getElementById('phaseValue').textContent = parseFloat(this.value).toFixed(2);
+            });
+            
+            updateTrigChart();
+        }
+        
+        function updateTrigChart() {
+            const amplitude = parseFloat(document.getElementById('amplitude').value);
+            const frequency = parseFloat(document.getElementById('frequency').value);
+            const phase = parseFloat(document.getElementById('phase').value);
+            
+            const xValues = [];
+            const sinValues = [];
+            const cosValues = [];
+            
+            for (let x = -Math.PI; x <= Math.PI; x += 0.1) {
+                xValues.push(x);
+                sinValues.push(amplitude * Math.sin(frequency * x + phase));
+                cosValues.push(amplitude * Math.cos(frequency * x + phase));
+            }
+            
+            if (trigChart) {
+                trigChart.destroy();
+            }
+            
+            const ctx = document.getElementById('trigChart').getContext('2d');
+            const colors = getThemeColors();
+            trigChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xValues.map(x => x.toFixed(2)),
+                    datasets: [
+                        {
+                            label: '正弦函数 sin(x)',
+                            data: sinValues,
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '20',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '余弦函数 cos(x)',
+                            data: cosValues,
+                            borderColor: colors.secondary,
+                            backgroundColor: colors.secondary + '20',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '三角函数可视化'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'x 值'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '函数值'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 电影票房图表
+        let movieChart;
+        const movieData = [
+            { name: "哪吒之魔童降世", boxOffice: 48.57 },
+            { name: "流浪地球", boxOffice: 46.18 },
+            { name: "复仇者联盟4:终局之战", boxOffice: 42.05 },
+            { name: "疯狂的外星人", boxOffice: 21.83 },
+            { name: "飞驰人生", boxOffice: 17.03 },
+            { name: "烈火英雄", boxOffice: 16.70 },
+            { name: "蜘蛛侠:英雄远征", boxOffice: 14.01 },
+            { name: "速度与激情:特别行动", boxOffice: 13.84 },
+            { name: "扫毒2天地对决", boxOffice: 12.85 },
+            { name: "大黄蜂", boxOffice: 11.38 }
+        ];
+        
+        function initMovieChart() {
+            updateMovieChart();
+        }
+        
+        function updateMovieChart() {
+            const sortOrder = document.getElementById('sortOrder').value;
+            const chartType = document.getElementById('chartType').value;
+            
+            let sortedData = [...movieData];
+            
+            if (sortOrder === 'desc') {
+                sortedData.sort((a, b) => b.boxOffice - a.boxOffice);
+            } else if (sortOrder === 'asc') {
+                sortedData.sort((a, b) => a.boxOffice - b.boxOffice);
+            } else if (sortOrder === 'name') {
+                sortedData.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+            }
+            
+            // 更新表格
+            const tableBody = document.getElementById('movieTable');
+            tableBody.innerHTML = '';
+            sortedData.forEach((movie, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${movie.name}</td>
+                    <td>${movie.boxOffice.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            if (movieChart) {
+                movieChart.destroy();
+            }
+            
+            const ctx = document.getElementById('movieChart').getContext('2d');
+            const colors = getThemeColors();
+            movieChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: sortedData.map(movie => movie.name),
+                    datasets: [{
+                        label: '票房(亿元)',
+                        data: sortedData.map(movie => movie.boxOffice),
+                        backgroundColor: colors.colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '2019年内地电影票房排行榜'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 支付宝账单图表
+        let alipayChart;
+        const alipayCategories = [
+            { name: "购物", ratio: 800/3000 },
+            { name: "人情往来", ratio: 100/3000 },
+            { name: "餐饮美食", ratio: 1000/3000 },
+            { name: "通信物流", ratio: 200/3000 },
+            { name: "生活日用", ratio: 300/3000 },
+            { name: "交通出行", ratio: 200/3000 },
+            { name: "休闲娱乐", ratio: 200/3000 },
+            { name: "其他", ratio: 200/3000 }
+        ];
+        
+        function initAlipayChart() {
+            updateAlipayChart();
+        }
+        
+        function updateAlipayChart() {
+            const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+            
+            if (alipayChart) {
+                alipayChart.destroy();
+            }
+            
+            const ctx = document.getElementById('alipayChart').getContext('2d');
+            const colors = getThemeColors();
+            alipayChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: alipayCategories.map(cat => cat.name),
+                    datasets: [{
+                        data: alipayCategories.map(cat => cat.ratio * totalAmount),
+                        backgroundColor: colors.colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `支付宝月账单报告 (总金额: ${totalAmount}元)`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percentage = ((value / totalAmount) * 100).toFixed(1);
+                                    return `${context.label}: ${value.toFixed(2)}元 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 速度与制动图表
+        let carChart;
+        const baseCarData = {
+            speed: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200],
+            distance: [0.5, 2.0, 4.4, 7.9, 12.3, 17.7, 24.1, 31.5, 39.9, 49.2, 59.5, 70.8, 83.1, 96.4, 110.7, 126.0, 142.2, 159.4, 177.6, 196.8]
+        };
+        
+        function initCarChart() {
+            updateCarChart();
+        }
+        
+        function updateCarChart() {
+            const roadCondition = document.getElementById('roadCondition').value;
+            const carType = document.getElementById('carType').value;
+            
+            let multiplier = 1;
+            if (roadCondition === 'wet') multiplier = 1.5;
+            if (roadCondition === 'ice') multiplier = 3;
+            
+            if (carType === 'suv') multiplier *= 1.2;
+            if (carType === 'truck') multiplier *= 1.5;
+            
+            const adjustedDistance = baseCarData.distance.map(d => d * multiplier);
+            
+            if (carChart) {
+                carChart.destroy();
+            }
+            
+            const ctx = document.getElementById('carChart').getContext('2d');
+            const colors = getThemeColors();
+            carChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '制动距离(m)',
+                        data: baseCarData.speed.map((speed, index) => ({
+                            x: speed,
+                            y: adjustedDistance[index]
+                        })),
+                        backgroundColor: colors.accent,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `汽车速度与制动距离关系 (${getRoadConditionText(roadCondition)}, ${getCarTypeText(carType)})`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '速度(km/h)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '制动距离(m)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function getRoadConditionText(condition) {
+            const conditions = {
+                'dry': '干燥路面',
+                'wet': '湿滑路面',
+                'ice': '冰雪路面'
+            };
+            return conditions[condition] || '干燥路面';
+        }
+        
+        function getCarTypeText(type) {
+            const types = {
+                'sedan': '轿车',
+                'suv': 'SUV',
+                'truck': '卡车'
+            };
+            return types[type] || '轿车';
+        }
+        
+        // 英语成绩图表
+        let englishChart;
+        const englishData = [
+            { class: "高二1班", male: 90.5, female: 92.7 },
+            { class: "高二2班", male: 89.5, female: 87.0 },
+            { class: "高二3班", male: 88.7, female: 90.5 },
+            { class: "高二4班", male: 88.5, female: 85.0 },
+            { class: "高二5班", male: 85.2, female: 89.5 },
+            { class: "高二6班", male: 86.6, female: 89.8 }
+        ];
+        
+        function initEnglishChart() {
+            updateEnglishChart();
+        }
+        
+        function updateEnglishChart() {
+            const showAverage = document.getElementById('showAverage').checked;
+            const genderFilter = document.getElementById('genderFilter').value;
+            
+            // 计算平均成绩
+            const averageScore = 88.5;
+            
+            if (englishChart) {
+                englishChart.destroy();
+            }
+            
+            const ctx = document.getElementById('englishChart').getContext('2d');
+            
+            const colors = getThemeColors();
+            const datasets = [];
+            
+            if (genderFilter === 'all' || genderFilter === 'male') {
+                datasets.push({
+                    label: '男生平均成绩',
+                    data: englishData.map(item => item.male),
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary,
+                    borderWidth: 1
+                });
+            }
+            
+            if (genderFilter === 'all' || genderFilter === 'female') {
+                datasets.push({
+                    label: '女生平均成绩',
+                    data: englishData.map(item => item.female),
+                    backgroundColor: colors.accent,
+                    borderColor: colors.accent,
+                    borderWidth: 1
+                });
+            }
+            
+            if (showAverage) {
+                datasets.push({
+                    label: '全体平均成绩',
+                    data: englishData.map(() => averageScore),
+                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    borderColor: '#666',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    type: 'line',
+                    fill: false
+                });
+            }
+            
+            englishChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: englishData.map(item => item.class),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '全校高二年级各班男女生英语成绩评估'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '分数'
+                            },
+                            min: 80,
+                            max: 100
+                        }
+                    }
+                }
+            });
+            
+            // 更新表格
+            const tableBody = document.getElementById('englishTable');
+            tableBody.innerHTML = '';
+            englishData.forEach(item => {
+                const classAverage = ((item.male + item.female) / 2).toFixed(1);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.class}</td>
+                    <td>${item.male}</td>
+                    <td>${item.female}</td>
+                    <td>${classAverage}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 主题切换功能
+        function changeTheme(theme) {
+            document.body.className = 'theme-' + theme;
+            
+            // 保存主题到本地存储
+            localStorage.setItem('selectedTheme', theme);
+            
+            // 重新初始化当前显示的图表以应用新主题
+            const activeContent = document.querySelector('.content.active');
+            if (activeContent) {
+                const tabId = activeContent.id;
+                if (tabId === 'trigonometry' && trigChart) {
+                    updateTrigChart();
+                } else if (tabId === 'movie' && movieChart) {
+                    updateMovieChart();
+                } else if (tabId === 'alipay' && alipayChart) {
+                    updateAlipayChart();
+                } else if (tabId === 'car' && carChart) {
+                    updateCarChart();
+                } else if (tabId === 'english' && englishChart) {
+                    updateEnglishChart();
+                }
+            }
+        }
+        
+        // 获取当前主题的配色方案
+        function getThemeColors() {
+            const theme = localStorage.getItem('selectedTheme') || 'purple';
+            const colorSchemes = {
+                purple: {
+                    primary: '#667eea',
+                    secondary: '#764ba2',
+                    accent: '#FF6384',
+                    colors: ['#667eea', '#764ba2', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                },
+                blue: {
+                    primary: '#4facfe',
+                    secondary: '#00f2fe',
+                    accent: '#FF6384',
+                    colors: ['#4facfe', '#00f2fe', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                },
+                green: {
+                    primary: '#43e97b',
+                    secondary: '#38f9d7',
+                    accent: '#FF6384',
+                    colors: ['#43e97b', '#38f9d7', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                },
+                orange: {
+                    primary: '#fa709a',
+                    secondary: '#fee140',
+                    accent: '#FF6384',
+                    colors: ['#fa709a', '#fee140', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                },
+                dark: {
+                    primary: '#3498db',
+                    secondary: '#2c3e50',
+                    accent: '#FF6384',
+                    colors: ['#3498db', '#2c3e50', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                }
+            };
+            return colorSchemes[theme] || colorSchemes.purple;
+        }
+        
+        // 页面加载时初始化主题和第一个图表
+        window.onload = function() {
+            // 从本地存储获取主题或使用默认主题
+            const savedTheme = localStorage.getItem('selectedTheme') || 'purple';
+            document.getElementById('themeSelect').value = savedTheme;
+            changeTheme(savedTheme);
+            
+            initTrigChart();
+        };
+    </script>
+</body>
+</html>
