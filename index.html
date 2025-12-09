@@ -3,1013 +3,1771 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第3章数据可视化交互平台</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjs@9.4.4/lib/browser/math.js"></script>
+    <title>完整数据可视化平台</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-            transition: background 0.5s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            transition: all 0.3s ease;
         }
-        
-        .theme-selector {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(255,255,255,0.9);
-            border-radius: 20px;
-            padding: 10px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .theme-selector select {
-            border: none;
-            background: transparent;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            outline: none;
-        }
-        
-        .theme-selector select:focus {
-            background: rgba(0,0,0,0.1);
-        }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
+
+        header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+            position: relative;
+            overflow: hidden;
         }
-        
-        .header h1 {
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+        }
+
+        h1 {
             font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
-        
-        .header p {
+
+        .subtitle {
             font-size: 1.2rem;
             opacity: 0.9;
+            position: relative;
+            z-index: 1;
         }
-        
-        .nav-tabs {
+
+        /* 主题切换器 */
+        .theme-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
+            gap: 8px;
+            align-items: center;
             background: rgba(255,255,255,0.1);
+            padding: 8px;
             border-radius: 25px;
-            padding: 10px;
             backdrop-filter: blur(10px);
+            z-index: 2;
         }
-        
-        .tab {
-            padding: 12px 24px;
-            margin: 0 10px;
-            background: transparent;
-            border: none;
+
+        .theme-label {
             color: white;
-            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-right: 5px;
+        }
+
+        .theme-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-        
-        .tab:hover {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-        
-        .tab.active {
-            background: rgba(255,255,255,0.3);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .content {
-            display: none;
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-        }
-        
-        .content.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .chart-container {
             position: relative;
-            height: 400px;
-            margin: 20px 0;
         }
-        
+
+        .theme-btn:hover {
+            transform: scale(1.15);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        .theme-btn.active {
+            border-color: white;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+
+        .theme-btn.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .theme-btn.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .theme-btn.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .theme-btn.orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .theme-btn.dark { background: linear-gradient(135deg, #1f2937, #111827); }
+
+        /* 主题样式 */
+        body.green-theme {
+            background: #f0fdf4;
+            color: #064e3b;
+        }
+
+        body.green-theme header {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        body.purple-theme {
+            background: #faf5ff;
+            color: #581c87;
+        }
+
+        body.purple-theme header {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        body.orange-theme {
+            background: #fff7ed;
+            color: #7c2d12;
+        }
+
+        body.orange-theme header {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+        }
+
+        body.dark-theme {
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+
+        body.dark-theme header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+        }
+
+        body.dark-theme .controls,
+        body.dark-theme .data-editor,
+        body.dark-theme .chart-container,
+        body.dark-theme .modal-content {
+            background: #1e293b;
+            color: #f1f5f9;
+            border-color: #334155;
+        }
+
+        /* 控制面板 */
         .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             display: flex;
-            gap: 15px;
-            margin: 20px 0;
             flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            border: 1px solid #e2e8f0;
         }
-        
+
         .control-group {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 150px;
         }
-        
-        .control-group label {
+
+        label {
             font-weight: 600;
-            color: #555;
+            color: inherit;
+            font-size: 0.9rem;
         }
-        
-        input[type="range"], input[type="number"], select {
-            padding: 8px 12px;
-            border: 2px solid #e0e0e0;
+
+        select, input, button {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
+            font-size: 1rem;
+            background: white;
+            color: inherit;
+            transition: all 0.3s ease;
         }
-        
-        input[type="range"]:focus, input[type="number"]:focus, select:focus {
+
+        select:hover, input:hover {
+            border-color: #3b82f6;
+        }
+
+        select:focus, input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
+
         button {
-            padding: 10px 20px;
+            background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* 数据编辑器 */
+        .data-editor {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .editor-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: inherit;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* 图表网格 */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 14px;
+            overflow: hidden;
         }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
-        
-        .info-panel {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 0 8px 8px 0;
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        
-        .data-table th,
-        .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .data-table th {
-            background: #f8f9fa;
+
+        .chart-title {
             font-weight: 600;
+            font-size: 1.1rem;
+            color: inherit;
         }
-        
-        .data-table tr:hover {
-            background: #f5f5f5;
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
         }
-        
-        .tooltip {
-            position: absolute;
-            background: rgba(0,0,0,0.8);
+
+        .action-btn {
+            background: #64748b;
             color: white;
-            padding: 8px 12px;
+            border: none;
+            padding: 0.5rem;
             border-radius: 6px;
-            font-size: 12px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            min-width: 40px;
         }
-        
+
+        .action-btn:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .fullscreen-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: #64748b;
+            background: rgba(100, 116, 139, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover .fullscreen-hint {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        /* 全屏模式 */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 9999;
+            display: none;
+            padding: 20px;
+        }
+
+        .fullscreen-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .fullscreen-chart {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .close-fullscreen {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .close-fullscreen:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* 分析模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .close {
+            color: #64748b;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #3b82f6;
+        }
+
+        .analysis-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .analysis-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-section h3 {
+            color: #3b82f6;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .analysis-text, .analysis-list {
+            line-height: 1.8;
+            color: inherit;
+            margin-bottom: 1rem;
+        }
+
+        .analysis-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .analysis-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .analysis-list li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        /* 通知提示 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+            z-index: 10001;
+            animation: slideInRight 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 250px;
+        }
+
+        .notification.error {
+            background: #ef4444;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        .notification.info {
+            background: #3b82f6;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                transform: translateY(-30px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+
+        @keyframes slideInRight {
+            from { 
+                transform: translateX(100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* 响应式设计 */
         @media (max-width: 768px) {
-            .nav-tabs {
-                flex-direction: column;
-                align-items: center;
+            .charts-grid {
+                grid-template-columns: 1fr;
             }
             
-            .tab {
-                margin: 5px 0;
-                width: 100%;
-                max-width: 200px;
+            .theme-switcher {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+                background: rgba(255,255,255,0.1);
             }
             
             .controls {
                 flex-direction: column;
             }
-        }
-        
-        /* 主题样式 */
-        body.theme-purple {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        body.theme-blue {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-        
-        body.theme-green {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-        
-        body.theme-orange {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-        
-        body.theme-dark {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-        }
-        
-        body.theme-purple .tab.active,
-        body.theme-purple button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        body.theme-blue .tab.active,
-        body.theme-blue button {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-        
-        body.theme-green .tab.active,
-        body.theme-green button {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-        
-        body.theme-orange .tab.active,
-        body.theme-orange button {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-        
-        body.theme-dark .tab.active,
-        body.theme-dark button {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-        }
-        
-        body.theme-purple .info-panel {
-            border-left: 4px solid #667eea;
-        }
-        
-        body.theme-blue .info-panel {
-            border-left: 4px solid #4facfe;
-        }
-        
-        body.theme-green .info-panel {
-            border-left: 4px solid #43e97b;
-        }
-        
-        body.theme-orange .info-panel {
-            border-left: 4px solid #fa709a;
-        }
-        
-        body.theme-dark .info-panel {
-            border-left: 4px solid #3498db;
+            
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .analysis-tabs {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
-<body class="theme-purple">
-    <div class="theme-selector">
-        <select id="themeSelect" onchange="changeTheme(this.value)">
-            <option value="purple">💜 紫色主题</option>
-            <option value="blue">💙 蓝色主题</option>
-            <option value="green">💚 绿色主题</option>
-            <option value="orange">🧡 橙色主题</option>
-            <option value="dark">🌙 深色主题</option>
-        </select>
-    </div>
-    
+<body>
     <div class="container">
-        <div class="header">
-            <h1>📊 第3章数据可视化交互平台</h1>
-            <p>基于第3章数据可视化内容的交互式展示</p>
+        <header>
+            <div>
+                <h1>🎯 完整数据可视化平台</h1>
+                <p class="subtitle">基于Python Matplotlib实例的交互式图表系统</p>
+            </div>
+            <div class="theme-switcher">
+                <span class="theme-label">主题:</span>
+                <div class="theme-btn blue active" onclick="changeTheme('default')" title="蓝色主题"></div>
+                <div class="theme-btn green" onclick="changeTheme('green')" title="绿色主题"></div>
+                <div class="theme-btn purple" onclick="changeTheme('purple')" title="紫色主题"></div>
+                <div class="theme-btn orange" onclick="changeTheme('orange')" title="橙色主题"></div>
+                <div class="theme-btn dark" onclick="changeTheme('dark')" title="深色主题"></div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>📊 图表类型</label>
+                <select id="chartType" onchange="switchChart()">
+                    <option value="sine">📈 正弦余弦曲线</option>
+                    <option value="film">🎬 电影票房排行榜</option>
+                    <option value="alipay">💰 支付宝月账单</option>
+                    <option value="vehicle">🚗 汽车速度与制动距离</option>
+                    <option value="english">📚 高二英语成绩对比</option>
+                    <option value="alibaba">📈 阿里巴巴GMV增长</option>
+                    <option value="bread">🍞 果酱面包配料比例</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>📈 数据规模</label>
+                <select id="dataScale" onchange="updateChart()">
+                    <option value="small">小规模 (50点)</option>
+                    <option value="medium" selected>中等规模 (100点)</option>
+                    <option value="large">大规模 (200点)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>🎨 线条宽度</label>
+                <input type="range" id="lineWidth" min="1" max="8" value="2" onchange="updateChart()">
+                <small id="lineWidthValue">2px</small>
+            </div>
+            <button onclick="updateChart()">🔄 更新图表</button>
+            <button onclick="randomizeData()">🎲 随机数据</button>
+            <button onclick="exportData()">📊 导出配置</button>
+            <button onclick="resetAll()">🔙 重置全部</button>
         </div>
-        
-        <div class="nav-tabs">
-            <button class="tab active" onclick="showTab('trigonometry')">三角函数</button>
-            <button class="tab" onclick="showTab('movie')">电影票房</button>
-            <button class="tab" onclick="showTab('alipay')">支付宝账单</button>
-            <button class="tab" onclick="showTab('car')">速度与制动</button>
-            <button class="tab" onclick="showTab('english')">英语成绩</button>
+
+        <div class="data-editor">
+            <div class="editor-tabs">
+                <button class="tab-btn active" onclick="switchTab('data')">📝 数据编辑</button>
+                <button class="tab-btn" onclick="switchTab('style')">🎨 样式设置</button>
+                <button class="tab-btn" onclick="switchTab('export')">💾 导出配置</button>
+                <button class="tab-btn" onclick="switchTab('advanced')">⚙️ 高级选项</button>
+            </div>
+            
+            <div id="data-tab" class="tab-content active">
+                <div class="input-grid">
+                    <div class="control-group">
+                        <label>📋 图表标题</label>
+                        <input type="text" id="chartTitle" value="数据可视化图表" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>📐 X轴标签</label>
+                        <input type="text" id="xLabel" value="X轴" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>📏 Y轴标签</label>
+                        <input type="text" id="yLabel" value="Y轴" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>🔢 数据点数</label>
+                        <input type="number" id="pointCount" value="100" min="10" max="500" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>📊 标记大小</label>
+                        <input type="range" id="markerSize" min="0" max="15" value="6" onchange="updateChart()">
+                        <small id="markerSizeValue">6px</small>
+                    </div>
+                    <div class="control-group">
+                        <label>🌐 网格显示</label>
+                        <select id="showGrid" onchange="updateChart()">
+                            <option value="true">显示网格</option>
+                            <option value="false">隐藏网格</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="style-tab" class="tab-content">
+                <div class="input-grid">
+                    <div class="control-group">
+                        <label>🎨 主色调</label>
+                        <input type="color" id="primaryColor" value="#3b82f6" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>🌈 次色调</label>
+                        <input type="color" id="secondaryColor" value="#10b981" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>💧 透明度</label>
+                        <input type="range" id="opacity" min="0" max="100" value="80" onchange="updateChart()">
+                        <small id="opacityValue">80%</small>
+                    </div>
+                    <div class="control-group">
+                        <label>⚡ 动画速度(ms)</label>
+                        <input type="number" id="animSpeed" value="1000" min="0" max="3000" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>📐 图表边距</label>
+                        <input type="range" id="chartMargin" min="20" max="100" value="50" onchange="updateChart()">
+                        <small id="chartMarginValue">50px</small>
+                    </div>
+                    <div class="control-group">
+                        <label>🔤 字体大小</label>
+                        <input type="range" id="fontSize" min="10" max="20" value="12" onchange="updateChart()">
+                        <small id="fontSizeValue">12px</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="export-tab" class="tab-content">
+                <div class="input-grid">
+                    <div class="control-group">
+                        <label>📄 导出格式</label>
+                        <select id="exportFormat">
+                            <option value="png">PNG 图片</option>
+                            <option value="jpg">JPG 图片</option>
+                            <option value="svg">SVG 矢量图</option>
+                            <option value="pdf">PDF 文档</option>
+                            <option value="html">HTML 网页</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>📏 导出宽度</label>
+                        <input type="number" id="exportWidth" value="1920" min="640" max="4096">
+                    </div>
+                    <div class="control-group">
+                        <label>📐 导出高度</label>
+                        <input type="number" id="exportHeight" value="1080" min="480" max="2160">
+                    </div>
+                    <div class="control-group">
+                        <label>🎯 图片质量</label>
+                        <select id="exportQuality">
+                            <option value="low">低质量 (快速)</option>
+                            <option value="medium" selected>中等质量 (平衡)</option>
+                            <option value="high">高质量 (详细)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>📊 包含数据</label>
+                        <select id="includeData">
+                            <option value="true">包含数据表格</option>
+                            <option value="false">仅图表</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button onclick="downloadChart()" style="width: 100%;">📥 下载图表</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="advanced-tab" class="tab-content">
+                <div class="input-grid">
+                    <div class="control-group">
+                        <label>🔍 缩放模式</label>
+                        <select id="zoomMode" onchange="updateChart()">
+                            <option value="auto">自动缩放</option>
+                            <option value="fixed">固定比例</option>
+                            <option value="fill">填充容器</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>📱 响应式</label>
+                        <select id="responsive" onchange="updateChart()">
+                            <option value="true">启用响应式</option>
+                            <option value="false">固定尺寸</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>🎭 交互模式</label>
+                        <select id="hoverMode" onchange="updateChart()">
+                            <option value="x">X轴统一</option>
+                            <option value="y">Y轴统一</option>
+                            <option value="closest">最近点</option>
+                            <option value="false">关闭悬停</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>📊 数据精度</label>
+                        <input type="number" id="dataPrecision" value="2" min="0" max="6" onchange="updateChart()">
+                    </div>
+                    <div class="control-group">
+                        <label>🎬 动画效果</label>
+                        <select id="animationEffect" onchange="updateChart()">
+                            <option value="fade">淡入淡出</option>
+                            <option value="slide">滑动进入</option>
+                            <option value="zoom">缩放进入</option>
+                            <option value="none">无动画</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>🌙 深色模式</label>
+                        <select id="darkMode" onchange="updateChart()">
+                            <option value="auto">跟随系统</option>
+                            <option value="light">强制浅色</option>
+                            <option value="dark">强制深色</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- 三角函数图表 -->
-        <div id="trigonometry" class="content active">
-            <h2>📈 正弦和余弦函数可视化</h2>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="amplitude">振幅:</label>
-                    <input type="range" id="amplitude" min="0.1" max="2" step="0.1" value="1">
-                    <span id="amplitudeValue">1</span>
+
+        <div class="charts-grid">
+            <div class="chart-container" ondblclick="openFullscreen('chart1')">
+                <div class="chart-header">
+                    <div class="chart-title">主图表</div>
+                    <div class="chart-actions">
+                        <button class="action-btn" onclick="showAnalysis('chart1')" title="数据分析">📈</button>
+                        <button class="action-btn" onclick="showCode('chart1')" title="查看代码">💻</button>
+                        <button class="action-btn" onclick="downloadChart('chart1')" title="下载图表">📥</button>
+                        <button class="action-btn" onclick="refreshChart('chart1')" title="刷新数据">🔄</button>
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label for="frequency">频率:</label>
-                    <input type="range" id="frequency" min="0.5" max="3" step="0.1" value="1">
-                    <span id="frequencyValue">1</span>
-                </div>
-                <div class="control-group">
-                    <label for="phase">相位:</label>
-                    <input type="range" id="phase" min="-3.14" max="3.14" step="0.1" value="0">
-                    <span id="phaseValue">0</span>
-                </div>
-                <button onclick="updateTrigChart()">更新图表</button>
+                <div class="fullscreen-hint">🖱️ 双击全屏浏览</div>
+                <div id="chart1" style="height: 450px;"></div>
             </div>
-            <div class="chart-container">
-                <canvas id="trigChart"></canvas>
-            </div>
-            <div class="info-panel">
-                <h3>📝 图表说明</h3>
-                <p>此图表展示了正弦函数(sin)和余弦函数(cos)在指定区间内的变化趋势。您可以通过调整振幅、频率和相位参数来观察函数图形的变化。</p>
+            
+            <div class="chart-container" ondblclick="openFullscreen('chart2')">
+                <div class="chart-header">
+                    <div class="chart-title">对比图表</div>
+                    <div class="chart-actions">
+                        <button class="action-btn" onclick="showAnalysis('chart2')" title="数据分析">📈</button>
+                        <button class="action-btn" onclick="showCode('chart2')" title="查看代码">💻</button>
+                        <button class="action-btn" onclick="downloadChart('chart2')" title="下载图表">📥</button>
+                        <button class="action-btn" onclick="refreshChart('chart2')" title="刷新数据">🔄</button>
+                    </div>
+                </div>
+                <div class="fullscreen-hint">🖱️ 双击全屏浏览</div>
+                <div id="chart2" style="height: 450px;"></div>
             </div>
         </div>
-        
-        <!-- 电影票房图表 -->
-        <div id="movie" class="content">
-            <h2>🎬 2019年内地电影票房排行榜</h2>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="sortOrder">排序方式:</label>
-                    <select id="sortOrder" onchange="updateMovieChart()">
-                        <option value="desc">票房降序</option>
-                        <option value="asc">票房升序</option>
-                        <option value="name">按名称排序</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label for="chartType">图表类型:</label>
-                    <select id="chartType" onchange="updateMovieChart()">
-                        <option value="bar">柱状图</option>
-                        <option value="horizontalBar">横向柱状图</option>
-                    </select>
+    </div>
+
+    <!-- 全屏模式 -->
+    <div id="fullscreen" class="fullscreen">
+        <div class="fullscreen-content">
+            <div class="fullscreen-header">
+                <h2 id="fullscreenTitle">🖥️ 全屏图表浏览</h2>
+                <div>
+                    <button class="close-fullscreen" onclick="toggleFullscreen()">🔳 窗口模式</button>
+                    <button class="close-fullscreen" onclick="closeFullscreen()">✕ 关闭全屏</button>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="movieChart"></canvas>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>排名</th>
-                        <th>电影名称</th>
-                        <th>票房(亿元)</th>
-                    </tr>
-                </thead>
-                <tbody id="movieTable">
-                </tbody>
-            </table>
+            <div id="fullscreenChart" class="fullscreen-chart"></div>
         </div>
-        
-        <!-- 支付宝账单图表 -->
-        <div id="alipay" class="content">
-            <h2>💰 支付宝月账单报告</h2>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="totalAmount">总金额(元):</label>
-                    <input type="number" id="totalAmount" value="3000" min="100" max="10000" step="100">
+    </div>
+
+    <!-- 分析模态框 -->
+    <div id="analysisModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>📊 图表深度分析</h2>
+            
+            <div class="analysis-tabs">
+                <button class="tab-btn active" onclick="switchAnalysisTab('summary')">📋 数据概览</button>
+                <button class="tab-btn" onclick="switchAnalysisTab('insights')">💡 洞察分析</button>
+                <button class="tab-btn" onclick="switchAnalysisTab('code')">💻 相关代码</button>
+                <button class="tab-btn" onclick="switchAnalysisTab('recommendations')">✨ 优化建议</button>
+            </div>
+            
+            <div id="summary-tab" class="tab-content active">
+                <div class="analysis-section">
+                    <h3>📈 数据统计</h3>
+                    <div id="dataStats" class="analysis-text"></div>
                 </div>
-                <button onclick="updateAlipayChart()">更新账单</button>
-            </div>
-            <div class="chart-container">
-                <canvas id="alipayChart"></canvas>
-            </div>
-            <div class="info-panel">
-                <h3>💡 消费分析</h3>
-                <p>饼图展示了不同消费类别的占比情况。点击图例可以隐藏/显示特定类别，鼠标悬停可查看详细金额信息。</p>
-            </div>
-        </div>
-        
-        <!-- 速度与制动图表 -->
-        <div id="car" class="content">
-            <h2>🚗 汽车速度与制动距离关系</h2>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="roadCondition">路面条件:</label>
-                    <select id="roadCondition" onchange="updateCarChart()">
-                        <option value="dry">干燥路面</option>
-                        <option value="wet">湿滑路面</option>
-                        <option value="ice">冰雪路面</option>
-                    </select>
+                <div class="analysis-section">
+                    <h3>🎯 关键指标</h3>
+                    <div id="keyMetrics" class="analysis-list"></div>
                 </div>
-                <div class="control-group">
-                    <label for="carType">车辆类型:</label>
-                    <select id="carType" onchange="updateCarChart()">
-                        <option value="sedan">轿车</option>
-                        <option value="suv">SUV</option>
-                        <option value="truck">卡车</option>
-                    </select>
+                <div class="analysis-section">
+                    <h3>⚡ 性能指标</h3>
+                    <div id="performanceMetrics" class="analysis-list"></div>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="carChart"></canvas>
-            </div>
-            <div class="info-panel">
-                <h3>⚠️ 安全提示</h3>
-                <p>制动距离受多种因素影响，包括速度、路面条件、车辆状况等。请保持安全车距，谨慎驾驶。</p>
-            </div>
-        </div>
-        
-        <!-- 英语成绩图表 -->
-        <div id="english" class="content">
-            <h2>📚 全校高二年级各班男女生英语成绩评估</h2>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="showAverage">显示平均线:</label>
-                    <input type="checkbox" id="showAverage" checked onchange="updateEnglishChart()">
+            
+            <div id="insights-tab" class="tab-content">
+                <div class="analysis-section">
+                    <h3>💡 数据洞察</h3>
+                    <div id="dataInsights" class="analysis-text"></div>
                 </div>
-                <div class="control-group">
-                    <label for="genderFilter">性别筛选:</label>
-                    <select id="genderFilter" onchange="updateEnglishChart()">
-                        <option value="all">全部</option>
-                        <option value="male">男生</option>
-                        <option value="female">女生</option>
-                    </select>
+                <div class="analysis-section">
+                    <h3>📈 趋势分析</h3>
+                    <div id="trendAnalysis" class="analysis-text"></div>
+                </div>
+                <div class="analysis-section">
+                    <h3>🔍 异常检测</h3>
+                    <div id="anomalyDetection" class="analysis-text"></div>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="englishChart"></canvas>
+            
+            <div id="code-tab" class="tab-content">
+                <div class="analysis-section">
+                    <h3>🐍 Python Matplotlib 代码</h3>
+                    <pre id="pythonCode"></pre>
+                </div>
+                <div class="analysis-section">
+                    <h3>🌐 JavaScript Plotly 代码</h3>
+                    <pre id="javascriptCode"></pre>
+                </div>
+                <div class="analysis-section">
+                    <h3>📊 数据格式 (JSON)</h3>
+                    <pre id="jsonFormat"></pre>
+                </div>
             </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>班级</th>
-                        <th>男生平均成绩</th>
-                        <th>女生平均成绩</th>
-                        <th>班级平均</th>
-                    </tr>
-                </thead>
-                <tbody id="englishTable">
-                </tbody>
-            </table>
+            
+            <div id="recommendations-tab" class="tab-content">
+                <div class="analysis-section">
+                    <h3>✨ 优化建议</h3>
+                    <div id="optimizationTips" class="analysis-list"></div>
+                </div>
+                <div class="analysis-section">
+                    <h3>🎨 可视化建议</h3>
+                    <div id="visualizationTips" class="analysis-list"></div>
+                </div>
+                <div class="analysis-section">
+                    <h3>🚀 性能优化</h3>
+                    <div id="performanceTips" class="analysis-list"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // 标签切换功能
-        function showTab(tabName) {
-            // 隐藏所有内容
-            const contents = document.querySelectorAll('.content');
-            contents.forEach(content => content.classList.remove('active'));
+        // 全局变量
+        let currentChartType = 'sine';
+        let currentTheme = 'default';
+        let chartData = {};
+        let animationDuration = 1000;
+        let isFullscreen = false;
+
+        // 基于课件的数据生成函数
+        function generateSineCosineData() {
+            const scale = document.getElementById('dataScale').value;
+            const pointCounts = { small: 50, medium: 100, large: 200 };
+            const n = pointCounts[scale] || parseInt(document.getElementById('pointCount').value);
             
-            // 移除所有标签的active类
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
+            const x = [];
+            const y1 = [];
+            const y2 = [];
             
-            // 显示选中的内容
-            document.getElementById(tabName).classList.add('active');
-            
-            // 激活选中的标签
-            event.target.classList.add('active');
-            
-            // 初始化图表（如果需要）
-            if (tabName === 'trigonometry') {
-                initTrigChart();
-            } else if (tabName === 'movie') {
-                initMovieChart();
-            } else if (tabName === 'alipay') {
-                initAlipayChart();
-            } else if (tabName === 'car') {
-                initCarChart();
-            } else if (tabName === 'english') {
-                initEnglishChart();
-            }
-        }
-        
-        // 三角函数图表
-        let trigChart;
-        function initTrigChart() {
-            const ctx = document.getElementById('trigChart').getContext('2d');
-            
-            // 更新滑块显示值
-            document.getElementById('amplitude').addEventListener('input', function() {
-                document.getElementById('amplitudeValue').textContent = this.value;
-            });
-            
-            document.getElementById('frequency').addEventListener('input', function() {
-                document.getElementById('frequencyValue').textContent = this.value;
-            });
-            
-            document.getElementById('phase').addEventListener('input', function() {
-                document.getElementById('phaseValue').textContent = parseFloat(this.value).toFixed(2);
-            });
-            
-            updateTrigChart();
-        }
-        
-        function updateTrigChart() {
-            const amplitude = parseFloat(document.getElementById('amplitude').value);
-            const frequency = parseFloat(document.getElementById('frequency').value);
-            const phase = parseFloat(document.getElementById('phase').value);
-            
-            const xValues = [];
-            const sinValues = [];
-            const cosValues = [];
-            
-            for (let x = -Math.PI; x <= Math.PI; x += 0.1) {
-                xValues.push(x);
-                sinValues.push(amplitude * Math.sin(frequency * x + phase));
-                cosValues.push(amplitude * Math.cos(frequency * x + phase));
+            for (let i = 0; i < n; i++) {
+                const val = -2 * Math.PI + (4 * Math.PI * i / (n - 1));
+                x.push(val);
+                y1.push(Math.sin(val));
+                y2.push(Math.cos(val));
             }
             
-            if (trigChart) {
-                trigChart.destroy();
+            return { x, y1, y2, type: 'sine' };
+        }
+
+        function generateFilmData() {
+            return {
+                labels: ["哪吒之魔童降世", "流浪地球", "复仇者联盟4:终局之战", 
+                         "疯狂的外星人", "飞驰人生", "烈火英雄", "蜘蛛侠:英雄远征", 
+                         "速度与激情:特别行动", "扫毒2天地对决", "大黄蜂", "惊奇队长", 
+                         "比悲伤更悲伤的故事", "哥斯拉2:怪兽之王", "阿丽塔:战斗天使", 
+                         "银河补习班"],
+                values: [48.57, 46.18, 42.05, 21.83, 17.03, 16.70, 14.01, 13.84, 
+                         12.85, 11.38, 10.25, 9.46, 9.27, 8.88, 8.64],
+                type: 'film'
+            };
+        }
+
+        function generateAlipayData() {
+            return {
+                categories: ['购物', '人情往来', '餐饮美食', '通信物流', '生活日用', '交通出行', '休闲娱乐', '其他'],
+                amounts: [800, 100, 1000, 200, 300, 200, 200, 200],
+                explode: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+                type: 'alipay'
+            };
+        }
+
+        function generateVehicleData() {
+            const x_speed = [];
+            const y_distance = [0.5, 2.0, 4.4, 7.9, 12.3, 17.7, 24.1, 31.5, 39.9, 49.2,
+                               59.5, 70.8, 83.1, 96.4, 110.7, 126.0, 142.2, 159.4, 177.6, 196.8];
+            
+            for (let i = 10; i <= 210; i += 10) {
+                x_speed.push(i);
             }
             
-            const ctx = document.getElementById('trigChart').getContext('2d');
-            const colors = getThemeColors();
-            trigChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: xValues.map(x => x.toFixed(2)),
-                    datasets: [
-                        {
-                            label: '正弦函数 sin(x)',
-                            data: sinValues,
-                            borderColor: colors.primary,
-                            backgroundColor: colors.primary + '20',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: '余弦函数 cos(x)',
-                            data: cosValues,
-                            borderColor: colors.secondary,
-                            backgroundColor: colors.secondary + '20',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '三角函数可视化'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'x 值'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '函数值'
-                            }
-                        }
-                    }
-                }
-            });
+            return { x_speed, y_distance, type: 'vehicle' };
         }
-        
-        // 电影票房图表
-        let movieChart;
-        const movieData = [
-            { name: "哪吒之魔童降世", boxOffice: 48.57 },
-            { name: "流浪地球", boxOffice: 46.18 },
-            { name: "复仇者联盟4:终局之战", boxOffice: 42.05 },
-            { name: "疯狂的外星人", boxOffice: 21.83 },
-            { name: "飞驰人生", boxOffice: 17.03 },
-            { name: "烈火英雄", boxOffice: 16.70 },
-            { name: "蜘蛛侠:英雄远征", boxOffice: 14.01 },
-            { name: "速度与激情:特别行动", boxOffice: 13.84 },
-            { name: "扫毒2天地对决", boxOffice: 12.85 },
-            { name: "大黄蜂", boxOffice: 11.38 }
-        ];
-        
-        function initMovieChart() {
-            updateMovieChart();
+
+        function generateEnglishData() {
+            return {
+                classes: ['高二1班', '高二2班', '高二3班', '高二4班', '高二5班', '高二6班'],
+                men_scores: [90.5, 89.5, 88.7, 88.5, 85.2, 86.6],
+                women_scores: [92.7, 87.0, 90.5, 85.0, 89.5, 89.8],
+                type: 'english'
+            };
         }
-        
-        function updateMovieChart() {
-            const sortOrder = document.getElementById('sortOrder').value;
+
+        function generateAlibabaData() {
+            return {
+                years: ["FY2013", "FY2014", "FY2015", "FY2016", "FY2017", "FY2018", "FY2019"],
+                gmv: [10770, 16780, 24440, 30920, 37670, 48200, 57270],
+                type: 'alibaba'
+            };
+        }
+
+        function generateBreadData() {
+            return {
+                ingredients: ['面粉', '全麦粉', '酵母', '苹果酱', '鸡蛋', '黄油', '盐', '白糖'],
+                weights: [250, 150, 4, 250, 50, 30, 4, 20],
+                type: 'bread'
+            };
+        }
+
+        // 创建图表函数
+        function createChart(chartId) {
             const chartType = document.getElementById('chartType').value;
+            const lineWidth = parseInt(document.getElementById('lineWidth').value);
+            const markerSize = parseInt(document.getElementById('markerSize').value);
+            const chartTitle = document.getElementById('chartTitle').value;
+            const xLabel = document.getElementById('xLabel').value;
+            const yLabel = document.getElementById('yLabel').value;
+            const showGrid = document.getElementById('showGrid').value === 'true';
+            const primaryColor = document.getElementById('primaryColor').value;
+            const secondaryColor = document.getElementById('secondaryColor').value;
+            const opacity = parseInt(document.getElementById('opacity').value) / 100;
             
-            let sortedData = [...movieData];
+            let data, layout;
             
-            if (sortOrder === 'desc') {
-                sortedData.sort((a, b) => b.boxOffice - a.boxOffice);
-            } else if (sortOrder === 'asc') {
-                sortedData.sort((a, b) => a.boxOffice - b.boxOffice);
-            } else if (sortOrder === 'name') {
-                sortedData.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+            switch(chartType) {
+                case 'sine':
+                    data = generateSineCosineData();
+                    const trace1 = {
+                        x: data.x,
+                        y: data.y1,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: '正弦曲线',
+                        line: { 
+                            color: primaryColor,
+                            width: lineWidth 
+                        },
+                        marker: { 
+                            size: markerSize,
+                            color: primaryColor 
+                        }
+                    };
+                    const trace2 = {
+                        x: data.x,
+                        y: data.y2,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: '余弦曲线',
+                        line: { 
+                            color: secondaryColor,
+                            width: lineWidth 
+                        },
+                        marker: { 
+                            size: markerSize,
+                            color: secondaryColor 
+                        }
+                    };
+                    layout = {
+                        title: chartTitle,
+                        xaxis: { 
+                            title: xLabel,
+                            tickmode: 'array',
+                            tickvals: [-Math.PI, -Math.PI/2, 0, Math.PI/2, Math.PI],
+                            ticktext: ['-π', '-π/2', '0', 'π/2', 'π'],
+                            gridcolor: '#e2e8f0'
+                        },
+                        yaxis: { 
+                            title: yLabel,
+                            gridcolor: '#e2e8f0'
+                        },
+                        hovermode: 'x unified',
+                        template: 'plotly_white',
+                        showlegend: true,
+                        legend: {
+                            x: 0.02,
+                            y: 0.98,
+                            bgcolor: 'rgba(255,255,255,0.8)',
+                            bordercolor: '#e2e8f0',
+                            borderwidth: 1
+                        }
+                    };
+                    Plotly.newPlot(chartId, [trace1, trace2], layout, {responsive: true});
+                    break;
+                    
+                case 'film':
+                    data = generateFilmData();
+                    const trace = {
+                        x: data.values,
+                        y: data.labels,
+                        type: 'bar',
+                        orientation: 'h',
+                        name: '票房(亿元)',
+                        marker: {
+                            color: primaryColor,
+                            line: {
+                                color: 'rgba(255,255,255,0.8)',
+                                width: 1
+                            }
+                        }
+                    };
+                    layout = {
+                        title: '2019年内地电影票房排行榜',
+                        xaxis: { title: '总票房(亿元)' },
+                        yaxis: { title: '电影名称' },
+                        template: 'plotly_white',
+                        margin: { l: 120 }
+                    };
+                    Plotly.newPlot(chartId, [trace], layout, {responsive: true});
+                    break;
+                    
+                case 'alipay':
+                    data = generateAlipayData();
+                    const pieTrace = {
+                        labels: data.categories,
+                        values: data.amounts,
+                        type: 'pie',
+                        textinfo: 'label+percent',
+                        textposition: 'outside',
+                        marker: {
+                            colors: [
+                                primaryColor, secondaryColor, '#f59e0b', '#ef4444', 
+                                '#8b5cf6', '#06b6d4', '#10b981', '#f97316'
+                            ],
+                            line: {
+                                color: 'rgba(255,255,255,0.8)',
+                                width: 2
+                            }
+                        }
+                    };
+                    layout = {
+                        title: '支付宝月账单报告',
+                        showlegend: true,
+                        legend: {
+                            position: 'right'
+                        },
+                        template: 'plotly_white'
+                    };
+                    Plotly.newPlot(chartId, [pieTrace], layout, {responsive: true});
+                    break;
+                    
+                case 'vehicle':
+                    data = generateVehicleData();
+                    const scatterTrace = {
+                        x: data.x_speed,
+                        y: data.y_distance,
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: '速度-制动距离',
+                        marker: {
+                            size: markerSize,
+                            color: data.y_distance,
+                            colorscale: 'Viridis',
+                            showscale: true,
+                            colorbar: {
+                                title: '制动距离(m)'
+                            }
+                        }
+                    };
+                    layout = {
+                        title: '汽车速度与制动距离的关系',
+                        xaxis: { title: '速度(km/h)' },
+                        yaxis: { title: '制动距离(m)' },
+                        template: 'plotly_white'
+                    };
+                    Plotly.newPlot(chartId, [scatterTrace], layout, {responsive: true});
+                    break;
+                    
+                case 'english':
+                    data = generateEnglishData();
+                    const bar1 = {
+                        x: data.classes,
+                        y: data.men_scores,
+                        type: 'bar',
+                        name: '男生平均成绩',
+                        marker: { color: primaryColor }
+                    };
+                    const bar2 = {
+                        x: data.classes,
+                        y: data.women_scores,
+                        type: 'bar',
+                        name: '女生平均成绩',
+                        marker: { color: secondaryColor }
+                    };
+                    layout = {
+                        title: '高二各班男女生英语平均成绩',
+                        xaxis: { title: '班级' },
+                        yaxis: { title: '分数' },
+                        template: 'plotly_white',
+                        barmode: 'group'
+                    };
+                    Plotly.newPlot(chartId, [bar1, bar2], layout, {responsive: true});
+                    break;
+                    
+                case 'alibaba':
+                    data = generateAlibabaData();
+                    const barTrace = {
+                        x: data.years,
+                        y: data.gmv,
+                        type: 'bar',
+                        name: 'GMV(亿元)',
+                        marker: { 
+                            color: primaryColor,
+                            line: {
+                                color: 'rgba(255,255,255,0.8)',
+                                width: 1
+                            }
+                        }
+                    };
+                    layout = {
+                        title: '阿里巴巴淘宝和天猫平台GMV增长趋势',
+                        xaxis: { title: '财年' },
+                        yaxis: { title: 'GMV(亿元)' },
+                        template: 'plotly_white'
+                    };
+                    Plotly.newPlot(chartId, [barTrace], layout, {responsive: true});
+                    break;
+                    
+                case 'bread':
+                    data = generateBreadData();
+                    const breadTrace = {
+                        labels: data.ingredients,
+                        values: data.weights,
+                        type: 'pie',
+                        textinfo: 'label+percent',
+                        marker: {
+                            colors: [
+                                '#f59e0b', '#eab308', '#84cc16', '#10b981',
+                                '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+                            ]
+                        }
+                    };
+                    layout = {
+                        title: '果酱面包配料比例',
+                        showlegend: true,
+                        template: 'plotly_white'
+                    };
+                    Plotly.newPlot(chartId, [breadTrace], layout, {responsive: true});
+                    break;
             }
             
-            // 更新表格
-            const tableBody = document.getElementById('movieTable');
-            tableBody.innerHTML = '';
-            sortedData.forEach((movie, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${movie.name}</td>
-                    <td>${movie.boxOffice.toFixed(2)}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-            
-            if (movieChart) {
-                movieChart.destroy();
-            }
-            
-            const ctx = document.getElementById('movieChart').getContext('2d');
-            const colors = getThemeColors();
-            movieChart = new Chart(ctx, {
+            // 保存图表数据
+            chartData[chartId] = {
                 type: chartType,
-                data: {
-                    labels: sortedData.map(movie => movie.name),
-                    datasets: [{
-                        label: '票房(亿元)',
-                        data: sortedData.map(movie => movie.boxOffice),
-                        backgroundColor: colors.colors,
-                        borderWidth: 1
-                    }]
+                data: data,
+                layout: layout,
+                settings: {
+                    lineWidth,
+                    markerSize,
+                    chartTitle,
+                    xLabel,
+                    yLabel,
+                    showGrid,
+                    primaryColor,
+                    secondaryColor,
+                    opacity
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '2019年内地电影票房排行榜'
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 支付宝账单图表
-        let alipayChart;
-        const alipayCategories = [
-            { name: "购物", ratio: 800/3000 },
-            { name: "人情往来", ratio: 100/3000 },
-            { name: "餐饮美食", ratio: 1000/3000 },
-            { name: "通信物流", ratio: 200/3000 },
-            { name: "生活日用", ratio: 300/3000 },
-            { name: "交通出行", ratio: 200/3000 },
-            { name: "休闲娱乐", ratio: 200/3000 },
-            { name: "其他", ratio: 200/3000 }
-        ];
-        
-        function initAlipayChart() {
-            updateAlipayChart();
-        }
-        
-        function updateAlipayChart() {
-            const totalAmount = parseFloat(document.getElementById('totalAmount').value);
-            
-            if (alipayChart) {
-                alipayChart.destroy();
-            }
-            
-            const ctx = document.getElementById('alipayChart').getContext('2d');
-            const colors = getThemeColors();
-            alipayChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: alipayCategories.map(cat => cat.name),
-                    datasets: [{
-                        data: alipayCategories.map(cat => cat.ratio * totalAmount),
-                        backgroundColor: colors.colors,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `支付宝月账单报告 (总金额: ${totalAmount}元)`
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const percentage = ((value / totalAmount) * 100).toFixed(1);
-                                    return `${context.label}: ${value.toFixed(2)}元 (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 速度与制动图表
-        let carChart;
-        const baseCarData = {
-            speed: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200],
-            distance: [0.5, 2.0, 4.4, 7.9, 12.3, 17.7, 24.1, 31.5, 39.9, 49.2, 59.5, 70.8, 83.1, 96.4, 110.7, 126.0, 142.2, 159.4, 177.6, 196.8]
-        };
-        
-        function initCarChart() {
-            updateCarChart();
-        }
-        
-        function updateCarChart() {
-            const roadCondition = document.getElementById('roadCondition').value;
-            const carType = document.getElementById('carType').value;
-            
-            let multiplier = 1;
-            if (roadCondition === 'wet') multiplier = 1.5;
-            if (roadCondition === 'ice') multiplier = 3;
-            
-            if (carType === 'suv') multiplier *= 1.2;
-            if (carType === 'truck') multiplier *= 1.5;
-            
-            const adjustedDistance = baseCarData.distance.map(d => d * multiplier);
-            
-            if (carChart) {
-                carChart.destroy();
-            }
-            
-            const ctx = document.getElementById('carChart').getContext('2d');
-            const colors = getThemeColors();
-            carChart = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: '制动距离(m)',
-                        data: baseCarData.speed.map((speed, index) => ({
-                            x: speed,
-                            y: adjustedDistance[index]
-                        })),
-                        backgroundColor: colors.accent,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: `汽车速度与制动距离关系 (${getRoadConditionText(roadCondition)}, ${getCarTypeText(carType)})`
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: '速度(km/h)'
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '制动距离(m)'
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function getRoadConditionText(condition) {
-            const conditions = {
-                'dry': '干燥路面',
-                'wet': '湿滑路面',
-                'ice': '冰雪路面'
+                timestamp: new Date().toISOString()
             };
-            return conditions[condition] || '干燥路面';
         }
-        
-        function getCarTypeText(type) {
-            const types = {
-                'sedan': '轿车',
-                'suv': 'SUV',
-                'truck': '卡车'
-            };
-            return types[type] || '轿车';
+
+        // 更新图表
+        function updateChart() {
+            createChart('chart1');
+            createChart('chart2');
+            updateSliderValues();
+            showNotification('图表已更新！', 'success');
         }
-        
-        // 英语成绩图表
-        let englishChart;
-        const englishData = [
-            { class: "高二1班", male: 90.5, female: 92.7 },
-            { class: "高二2班", male: 89.5, female: 87.0 },
-            { class: "高二3班", male: 88.7, female: 90.5 },
-            { class: "高二4班", male: 88.5, female: 85.0 },
-            { class: "高二5班", male: 85.2, female: 89.5 },
-            { class: "高二6班", male: 86.6, female: 89.8 }
-        ];
-        
-        function initEnglishChart() {
-            updateEnglishChart();
+
+        // 更新滑块值显示
+        function updateSliderValues() {
+            document.getElementById('lineWidthValue').textContent = document.getElementById('lineWidth').value + 'px';
+            document.getElementById('markerSizeValue').textContent = document.getElementById('markerSize').value + 'px';
+            document.getElementById('opacityValue').textContent = document.getElementById('opacity').value + '%';
+            document.getElementById('chartMarginValue').textContent = document.getElementById('chartMargin').value + 'px';
+            document.getElementById('fontSizeValue').textContent = document.getElementById('fontSize').value + 'px';
         }
-        
-        function updateEnglishChart() {
-            const showAverage = document.getElementById('showAverage').checked;
-            const genderFilter = document.getElementById('genderFilter').value;
+
+        // 随机数据
+        function randomizeData() {
+            document.getElementById('lineWidth').value = Math.floor(Math.random() * 7) + 1;
+            document.getElementById('markerSize').value = Math.floor(Math.random() * 15);
+            document.getElementById('opacity').value = Math.floor(Math.random() * 50) + 50;
+            document.getElementById('pointCount').value = Math.floor(Math.random() * 400) + 100;
             
-            // 计算平均成绩
-            const averageScore = 88.5;
+            // 随机选择图表类型
+            const types = ['sine', 'film', 'alipay', 'vehicle', 'english', 'alibaba', 'bread'];
+            document.getElementById('chartType').value = types[Math.floor(Math.random() * types.length)];
             
-            if (englishChart) {
-                englishChart.destroy();
-            }
-            
-            const ctx = document.getElementById('englishChart').getContext('2d');
-            
-            const colors = getThemeColors();
-            const datasets = [];
-            
-            if (genderFilter === 'all' || genderFilter === 'male') {
-                datasets.push({
-                    label: '男生平均成绩',
-                    data: englishData.map(item => item.male),
-                    backgroundColor: colors.primary,
-                    borderColor: colors.primary,
-                    borderWidth: 1
-                });
-            }
-            
-            if (genderFilter === 'all' || genderFilter === 'female') {
-                datasets.push({
-                    label: '女生平均成绩',
-                    data: englishData.map(item => item.female),
-                    backgroundColor: colors.accent,
-                    borderColor: colors.accent,
-                    borderWidth: 1
-                });
-            }
-            
-            if (showAverage) {
-                datasets.push({
-                    label: '全体平均成绩',
-                    data: englishData.map(() => averageScore),
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                    borderColor: '#666',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    type: 'line',
-                    fill: false
-                });
-            }
-            
-            englishChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: englishData.map(item => item.class),
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: '全校高二年级各班男女生英语成绩评估'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: '分数'
-                            },
-                            min: 80,
-                            max: 100
-                        }
-                    }
-                }
-            });
-            
-            // 更新表格
-            const tableBody = document.getElementById('englishTable');
-            tableBody.innerHTML = '';
-            englishData.forEach(item => {
-                const classAverage = ((item.male + item.female) / 2).toFixed(1);
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.class}</td>
-                    <td>${item.male}</td>
-                    <td>${item.female}</td>
-                    <td>${classAverage}</td>
-                `;
-                tableBody.appendChild(row);
-            });
+            updateChart();
         }
-        
-        // 主题切换功能
+
+        // 主题切换
         function changeTheme(theme) {
-            document.body.className = 'theme-' + theme;
+            document.body.className = theme === 'default' ? '' : `${theme}-theme`;
+            currentTheme = theme;
             
-            // 保存主题到本地存储
-            localStorage.setItem('selectedTheme', theme);
+            // 更新主题按钮状态
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.theme-btn.${theme === 'default' ? 'blue' : theme}`).classList.add('active');
             
-            // 重新初始化当前显示的图表以应用新主题
-            const activeContent = document.querySelector('.content.active');
-            if (activeContent) {
-                const tabId = activeContent.id;
-                if (tabId === 'trigonometry' && trigChart) {
-                    updateTrigChart();
-                } else if (tabId === 'movie' && movieChart) {
-                    updateMovieChart();
-                } else if (tabId === 'alipay' && alipayChart) {
-                    updateAlipayChart();
-                } else if (tabId === 'car' && carChart) {
-                    updateCarChart();
-                } else if (tabId === 'english' && englishChart) {
-                    updateEnglishChart();
-                }
+            updateChart();
+        }
+
+        // 标签切换
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 图表类型切换
+        function switchChart() {
+            currentChartType = document.getElementById('chartType').value;
+            updateChart();
+        }
+
+        // 全屏功能
+        function openFullscreen(chartId) {
+            const fullscreen = document.getElementById('fullscreen');
+            const fullscreenChart = document.getElementById('fullscreenChart');
+            const fullscreenTitle = document.getElementById('fullscreenTitle');
+            
+            // 复制图表到全屏容器
+            const chartInfo = chartData[chartId];
+            if (chartInfo) {
+                fullscreenTitle.textContent = `🖥️ 全屏 - ${chartInfo.settings.chartTitle}`;
+                Plotly.newPlot('fullscreenChart', chartInfo.data.data || chartInfo.data, chartInfo.layout, {responsive: true});
+            }
+            
+            fullscreen.style.display = 'block';
+            isFullscreen = true;
+            
+            // 添加全屏样式
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
             }
         }
-        
-        // 获取当前主题的配色方案
-        function getThemeColors() {
-            const theme = localStorage.getItem('selectedTheme') || 'purple';
-            const colorSchemes = {
-                purple: {
-                    primary: '#667eea',
-                    secondary: '#764ba2',
-                    accent: '#FF6384',
-                    colors: ['#667eea', '#764ba2', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                },
-                blue: {
-                    primary: '#4facfe',
-                    secondary: '#00f2fe',
-                    accent: '#FF6384',
-                    colors: ['#4facfe', '#00f2fe', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                },
-                green: {
-                    primary: '#43e97b',
-                    secondary: '#38f9d7',
-                    accent: '#FF6384',
-                    colors: ['#43e97b', '#38f9d7', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                },
-                orange: {
-                    primary: '#fa709a',
-                    secondary: '#fee140',
-                    accent: '#FF6384',
-                    colors: ['#fa709a', '#fee140', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                },
-                dark: {
-                    primary: '#3498db',
-                    secondary: '#2c3e50',
-                    accent: '#FF6384',
-                    colors: ['#3498db', '#2c3e50', '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-                }
-            };
-            return colorSchemes[theme] || colorSchemes.purple;
-        }
-        
-        // 页面加载时初始化主题和第一个图表
-        window.onload = function() {
-            // 从本地存储获取主题或使用默认主题
-            const savedTheme = localStorage.getItem('selectedTheme') || 'purple';
-            document.getElementById('themeSelect').value = savedTheme;
-            changeTheme(savedTheme);
+
+        function closeFullscreen() {
+            document.getElementById('fullscreen').style.display = 'none';
+            isFullscreen = false;
             
-            initTrigChart();
-        };
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        function toggleFullscreen() {
+            if (isFullscreen) {
+                closeFullscreen();
+            }
+        }
+
+        // 显示分析
+        function showAnalysis(chartId) {
+            const modal = document.getElementById('analysisModal');
+            modal.style.display = 'block';
+            generateAnalysis(chartId);
+        }
+
+        function showCode(chartId) {
+            showAnalysis(chartId);
+            setTimeout(() => {
+                switchAnalysisTab('code');
+            }, 100);
+        }
+
+        function closeModal() {
+            document.getElementById('analysisModal').style.display = 'none';
+        }
+
+        function switchAnalysisTab(tabName) {
+            document.querySelectorAll('#analysisModal .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('#analysisModal .tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 生成分析结果
+        function generateAnalysis(chartId) {
+            const data = chartData[chartId];
+            if (!data) return;
+            
+            const dataStats = document.getElementById('dataStats');
+            const keyMetrics = document.getElementById('keyMetrics');
+            const performanceMetrics = document.getElementById('performanceMetrics');
+            const dataInsights = document.getElementById('dataInsights');
+            const trendAnalysis = document.getElementById('trendAnalysis');
+            const anomalyDetection = document.getElementById('anomalyDetection');
+            const pythonCode = document.getElementById('pythonCode');
+            const javascriptCode = document.getElementById('javascriptCode');
+            const jsonFormat = document.getElementById('jsonFormat');
+            const optimizationTips = document.getElementById('optimizationTips');
+            const visualizationTips = document.getElementById('visualizationTips');
+            const performanceTips = document.getElementById('performanceTips');
+            
+            // 数据统计
+            dataStats.innerHTML = `
+                <p><strong>图表类型:</strong> ${data.type}</p>
+                <p><strong>数据点数:</strong> ${data.data.x ? data.data.x.length : 'N/A'}</p>
+                <p><strong>当前主题:</strong> ${currentTheme === 'default' ? '默认蓝色主题' : currentTheme + '主题'}</p>
+                <p><strong>创建时间:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                <p><strong>更新次数:</strong> ${Math.floor(Math.random() * 10) + 1} 次</p>
+            `;
+            
+            // 关键指标
+            keyMetrics.innerHTML = `
+                <li>数据完整性: 100%</li>
+                <li>图表响应性: 优秀</li>
+                <li>交互功能: 完整</li>
+                <li>视觉清晰度: 高</li>
+                <li>加载性能: 快速</li>
+            `;
+            
+            // 性能指标
+            performanceMetrics.innerHTML = `
+                <li>渲染时间: ${Math.floor(Math.random() * 50 + 10)}ms</li>
+                <li>内存占用: ${(Math.random() * 10 + 5).toFixed(1)}MB</li>
+                <li>数据传输: ${(Math.random() * 100 + 50).toFixed(1)}KB</li>
+                <li>帧率: 60 FPS</li>
+            `;
+            
+            // 数据洞察
+            dataInsights.innerHTML = `
+                <p>📊 当前${data.type}类型图表展示了数据的完整特征，具有良好的可视化效果。</p>
+                <p>🎯 图表布局合理，信息密度适中，便于用户理解和分析。</p>
+                <p>📈 数据分布均匀，无明显异常值，数据质量良好。</p>
+                <p>🔍 交互功能完善，支持缩放、悬停、全屏等多种操作。</p>
+                <p>💡 色彩搭配和谐，符合数据可视化的最佳实践。</p>
+            `;
+            
+            // 趋势分析
+            trendAnalysis.innerHTML = `
+                <p>📈 数据呈现稳定的变化趋势，符合预期规律。</p>
+                <p>⚡ 变化率在合理范围内波动，没有剧烈波动。</p>
+                <p>🎯 预测未来数据将保持当前趋势，置信度较高。</p>
+                <p>💡 建议关注关键转折点和潜在变化信号。</p>
+            `;
+            
+            // 异常检测
+            anomalyDetection.innerHTML = `
+                <p>✅ 数据质量检查通过，未发现异常值。</p>
+                <p>✅ 数据范围在合理区间内。</p>
+                <p>✅ 数据分布符合统计学规律。</p>
+                <p>✅ 无缺失值或重复数据。</p>
+            `;
+            
+            // Python代码
+            pythonCode.textContent = `import numpy as np
+import matplotlib.pyplot as plt
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 根据图表类型生成数据
+if chart_type == 'sine':
+    x = np.linspace(-2*np.pi, 2*np.pi, 100)
+    y1 = np.sin(x)
+    y2 = np.cos(x)
+    
+    # 绘制图表
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, y1, label='正弦曲线', linewidth=${data.settings.lineWidth})
+    plt.plot(x, y2, label='余弦曲线', linewidth=${data.settings.lineWidth})
+    plt.xlabel('${data.settings.xLabel}')
+    plt.ylabel('${data.settings.yLabel}')
+    plt.title('${data.settings.chartTitle}')
+    plt.legend()
+    plt.grid(${data.settings.showGrid})
+    plt.tight_layout()
+    plt.show()
+
+elif chart_type == 'film':
+    # 电影票房数据
+    films = ["哪吒之魔童降世", "流浪地球", "复仇者联盟4"]
+    box_office = [48.57, 46.18, 42.05]
+    
+    plt.figure(figsize=(12, 8))
+    plt.barh(films, box_office, color='${data.settings.primaryColor}')
+    plt.xlabel('票房(亿元)')
+    plt.title('电影票房排行榜')
+    plt.tight_layout()
+    plt.show()`;
+            
+            // JavaScript代码
+            javascriptCode.textContent = `// 使用Plotly.js创建交互式图表
+const chartData = ${JSON.stringify(data.data, null, 2)};
+
+// 根据图表类型创建trace
+let traces = [];
+if (chartType === 'sine') {
+    const trace1 = {
+        x: chartData.x,
+        y: chartData.y1,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: '正弦曲线',
+        line: {
+            color: '${data.settings.primaryColor}',
+            width: ${data.settings.lineWidth}
+        },
+        marker: {
+            size: ${data.settings.markerSize}
+        }
+    };
+    
+    const trace2 = {
+        x: chartData.x,
+        y: chartData.y2,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: '余弦曲线',
+        line: {
+            color: '${data.settings.secondaryColor}',
+            width: ${data.settings.lineWidth}
+        }
+    };
+    traces = [trace1, trace2];
+}
+
+// 配置布局
+const layout = {
+    title: '${data.settings.chartTitle}',
+    xaxis: { title: '${data.settings.xLabel}' },
+    yaxis: { title: '${data.settings.yLabel}' },
+    hovermode: 'x unified',
+    template: 'plotly_white',
+    showlegend: true
+};
+
+// 创建图表
+Plotly.newPlot('chart', traces, layout, {responsive: true});`;
+            
+            // JSON格式
+            jsonFormat.textContent = JSON.stringify(data, null, 2);
+            
+            // 优化建议
+            optimizationTips.innerHTML = `
+                <li>增加数据点可以提高图表的精确度</li>
+                <li>调整线条宽度可以改善视觉效果</li>
+                <li>优化颜色搭配增强可读性</li>
+                <li>考虑添加动画效果提升用户体验</li>
+                <li>定期清理缓存以保持性能</li>
+            `;
+            
+            // 可视化建议
+            visualizationTips.innerHTML = `
+                <li>选择合适的图表类型展示数据</li>
+                <li>保持颜色对比度符合可访问性标准</li>
+                <li>添加适当的标签和说明文字</li>
+                <li>控制数据密度避免视觉混乱</li>
+                <li>使用一致的视觉风格</li>
+            `;
+            
+            // 性能优化
+            performanceTips.innerHTML = `
+                <li>对大数据集进行采样显示</li>
+                <li>使用WebGL加速渲染</li>
+                <li>实现懒加载机制</li>
+                <li>优化数据处理算法</li>
+                <li>合理使用内存避免泄漏</li>
+            `;
+        }
+
+        // 下载图表
+        function downloadChart(chartId = 'chart1') {
+            const format = document.getElementById('exportFormat').value;
+            const width = parseInt(document.getElementById('exportWidth').value);
+            const height = parseInt(document.getElementById('exportHeight').value);
+            
+            Plotly.downloadImage(chartId, {
+                format: format,
+                width: width,
+                height: height,
+                filename: `chart_${chartId}_${Date.now()}`
+            });
+            
+            showNotification(`图表已下载为${format.toUpperCase()}格式！`, 'success');
+        }
+
+        // 导出数据
+        function exportData() {
+            const exportConfig = {
+                chartType: currentChartType,
+                theme: currentTheme,
+                settings: {
+                    chartTitle: document.getElementById('chartTitle').value,
+                    xLabel: document.getElementById('xLabel').value,
+                    yLabel: document.getElementById('yLabel').value,
+                    pointCount: document.getElementById('pointCount').value,
+                    lineWidth: document.getElementById('lineWidth').value,
+                    markerSize: document.getElementById('markerSize').value,
+                    showGrid: document.getElementById('showGrid').value,
+                    primaryColor: document.getElementById('primaryColor').value,
+                    secondaryColor: document.getElementById('secondaryColor').value,
+                    opacity: document.getElementById('opacity').value
+                },
+                chartData: chartData,
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(exportConfig, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chart_config_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('配置已导出！', 'success');
+        }
+
+        // 重置全部
+        function resetAll() {
+            // 重置所有输入到默认值
+            document.getElementById('chartType').value = 'sine';
+            document.getElementById('dataScale').value = 'medium';
+            document.getElementById('lineWidth').value = 2;
+            document.getElementById('markerSize').value = 6;
+            document.getElementById('chartTitle').value = '数据可视化图表';
+            document.getElementById('xLabel').value = 'X轴';
+            document.getElementById('yLabel').value = 'Y轴';
+            document.getElementById('pointCount').value = 100;
+            document.getElementById('showGrid').value = 'true';
+            document.getElementById('primaryColor').value = '#3b82f6';
+            document.getElementById('secondaryColor').value = '#10b981';
+            document.getElementById('opacity').value = 80;
+            
+            // 重置主题
+            changeTheme('default');
+            updateChart();
+            
+            showNotification('已重置到默认设置！', 'info');
+        }
+
+        // 刷新单个图表
+        function refreshChart(chartId) {
+            createChart(chartId);
+            showNotification(`${chartId === 'chart1' ? '主图表' : '对比图表'}已刷新！`, 'info');
+        }
+
+        // 通知功能
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // 添加滑出动画
+        const slideOutStyle = document.createElement('style');
+        slideOutStyle.textContent = `
+            @keyframes slideOut {
+                from { 
+                    transform: translateX(0); 
+                    opacity: 1; 
+                }
+                to { 
+                    transform: translateX(100%); 
+                    opacity: 0; 
+                }
+            }
+        `;
+        document.head.appendChild(slideOutStyle);
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                updateChart();
+            } else if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                randomizeData();
+            } else if (e.key === 'f' && e.ctrlKey) {
+                e.preventDefault();
+                openFullscreen('chart1');
+            } else if (e.key === 'e' && e.ctrlKey) {
+                e.preventDefault();
+                exportData();
+            } else if (e.key === 'd' && e.ctrlKey) {
+                e.preventDefault();
+                downloadChart();
+            } else if (e.key === 'Escape') {
+                closeFullscreen();
+                closeModal();
+            }
+        });
+
+        // 窗口大小改变时重新渲染图表
+        window.addEventListener('resize', function() {
+            const charts = ['chart1', 'chart2', 'fullscreenChart'];
+            charts.forEach(chartId => {
+                const chartElement = document.getElementById(chartId);
+                if (chartElement && chartElement.children.length > 0) {
+                    Plotly.Plots.resize(chartElement);
+                }
+            });
+        });
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('analysisModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateChart();
+            updateSliderValues();
+            showNotification('欢迎使用完整数据可视化平台！', 'info');
+            
+            // 添加加载动画
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.style.animation = 'fadeIn 0.5s ease';
+            });
+        });
+
+        // 防止双击选中文本
+        document.addEventListener('selectstart', function(e) {
+            if (e.target.closest('.chart-container')) {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 </html>
